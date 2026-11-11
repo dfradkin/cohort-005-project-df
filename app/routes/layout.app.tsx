@@ -11,6 +11,7 @@ import { loadNotificationFeedPrototype } from "~/lib/notification-feed.prototype
 import { VariantA } from "~/components/notification-feed-prototype/variant-a";
 import { VariantB } from "~/components/notification-feed-prototype/variant-b";
 import { VariantC } from "~/components/notification-feed-prototype/variant-c";
+import { VariantD } from "~/components/notification-feed-prototype/variant-d";
 import { PrototypeSwitcher } from "~/components/prototype-switcher";
 import { getCountryTierInfo, COUNTRIES } from "~/lib/ppp";
 import { eq, and, or, sql, desc } from "drizzle-orm";
@@ -247,7 +248,7 @@ export default function AppLayout({ loaderData }: Route.ComponentProps) {
 
   // PROTOTYPE (ticket #17) — variant switch. Delete with the branch.
   const [searchParams] = useSearchParams();
-  const variant = (searchParams.get("variant") ?? "A").toUpperCase();
+  const variant = (searchParams.get("variant") ?? "D").toUpperCase();
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -261,6 +262,7 @@ export default function AppLayout({ loaderData }: Route.ComponentProps) {
       />
       <main className="flex-1 overflow-y-auto">
         {variant === "C" && <VariantC feed={notificationFeed} />}
+        {variant === "D" && <VariantD feed={notificationFeed} />}
         {variant === "B" ? (
           <VariantB feed={notificationFeed} />
         ) : (
@@ -268,8 +270,9 @@ export default function AppLayout({ loaderData }: Route.ComponentProps) {
         )}
       </main>
       <PrototypeSwitcher
-        variants={["A", "B", "C"]}
+        variants={["D", "A", "B", "C"]}
         names={{
+          D: "WINNER — bell, worklist rows",
           A: "Lives in the nav",
           B: "A worklist of its own",
           C: "Bell and popover",
