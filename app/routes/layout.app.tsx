@@ -1,9 +1,17 @@
-import { Outlet } from "react-router";
+import { Outlet, useSearchParams } from "react-router";
 import type { Route } from "./+types/layout.app";
 import { Sidebar } from "~/components/sidebar";
 import { DevUI } from "~/components/dev-ui";
 import { Toaster } from "sonner";
 import { getCurrentUserId, getDevCountry } from "~/lib/session";
+// PROTOTYPE (ticket #17) — throwaway, branch `prototype/notification-feed`.
+// Three Notification Feed variants on ?variant=A|B|C, mounted on the real
+// layout. Remove this block and the four imports below to get main back.
+import { loadNotificationFeedPrototype } from "~/lib/notification-feed.prototype.server";
+import { VariantA } from "~/components/notification-feed-prototype/variant-a";
+import { VariantB } from "~/components/notification-feed-prototype/variant-b";
+import { VariantC } from "~/components/notification-feed-prototype/variant-c";
+import { PrototypeSwitcher } from "~/components/prototype-switcher";
 import { getCountryTierInfo, COUNTRIES } from "~/lib/ppp";
 import { eq, and, or, sql, desc } from "drizzle-orm";
 import { db } from "~/db";
@@ -198,7 +206,16 @@ export async function loader({ request }: Route.LoaderArgs) {
       })
     : [];
 
+  // PROTOTYPE (ticket #17)
+  const userIsTeamAdmin = currentUserId ? isTeamAdmin(currentUserId) : false;
+  const notificationFeed = await loadNotificationFeedPrototype({
+    userId: currentUserId ?? null,
+    role: currentUser?.role ?? null,
+    isTeamAdmin: userIsTeamAdmin,
+  });
+
   return {
+    notificationFeed,
     users: users.map((u) => ({ id: u.id, name: u.name, role: u.role })),
     currentUser: currentUser
       ? {
@@ -212,12 +229,13 @@ export async function loader({ request }: Route.LoaderArgs) {
     devCountry,
     countryTierInfo,
     countries: COUNTRIES,
-    isTeamAdmin: currentUserId ? isTeamAdmin(currentUserId) : false,
+    isTeamAdmin: userIsTeamAdmin,
   };
 }
 
 export default function AppLayout({ loaderData }: Route.ComponentProps) {
   const {
+    notificationFeed,
     users,
     currentUser,
     recentCourses,
@@ -227,16 +245,37 @@ export default function AppLayout({ loaderData }: Route.ComponentProps) {
     isTeamAdmin: userIsTeamAdmin,
   } = loaderData;
 
+  // PROTOTYPE (ticket #17) — variant switch. Delete with the branch.
+  const [searchParams] = useSearchParams();
+  const variant = (searchParams.get("variant") ?? "A").toUpperCase();
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar
         currentUser={currentUser}
         recentCourses={recentCourses}
         isTeamAdmin={userIsTeamAdmin}
+        notificationSlot={
+          variant === "A" ? <VariantA feed={notificationFeed} /> : null
+        }
       />
       <main className="flex-1 overflow-y-auto">
-        <Outlet />
+        {variant === "C" && <VariantC feed={notificationFeed} />}
+        {variant === "B" ? (
+          <VariantB feed={notificationFeed} />
+        ) : (
+          <Outlet />
+        )}
       </main>
+      <PrototypeSwitcher
+        variants={["A", "B", "C"]}
+        names={{
+          A: "Lives in the nav",
+          B: "A worklist of its own",
+          C: "Bell and popover",
+        }}
+        caption={notificationFeed.note}
+      />
       <DevUI
         users={users}
         currentUser={currentUser}

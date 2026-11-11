@@ -41,6 +41,8 @@ interface SidebarProps {
   currentUser: CurrentUser | null;
   recentCourses?: RecentCourse[];
   isTeamAdmin?: boolean;
+  /** PROTOTYPE (ticket #17) — variant A mounts the Notification Feed here. */
+  notificationSlot?: React.ReactNode;
 }
 
 interface NavItem {
@@ -117,6 +119,7 @@ export function Sidebar({
   currentUser,
   recentCourses = [],
   isTeamAdmin = false,
+  notificationSlot,
 }: SidebarProps) {
   const currentUserRole = currentUser?.role ?? null;
   const [isDark, setIsDark] = useState(false);
@@ -179,6 +182,9 @@ export function Sidebar({
           </NavLink>
         )}
       </nav>
+
+      {/* PROTOTYPE (ticket #17) — variant A only. */}
+      {notificationSlot}
 
       {recentCourses.length > 0 && (
         <div className="border-t border-sidebar-border p-3">
